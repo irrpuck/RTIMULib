@@ -468,9 +468,10 @@ bool RTIMUMPU9150::IMURead()
 {
     unsigned char fifoCount[2];
     unsigned int count;
-    unsigned char fifoData[12];
+    unsigned char fifoData[6];
+    unsigned char fifoData2[6];
     unsigned char compassData[8];
-
+    /*
     if (!m_settings->HALRead(m_slaveAddr, MPU9150_FIFO_COUNT_H, 2, fifoCount, "Failed to read fifo count"))
          return false;
 
@@ -482,7 +483,7 @@ bool RTIMUMPU9150::IMURead()
         m_imuData.timestamp += m_sampleInterval * (1024 / MPU9150_FIFO_CHUNK_SIZE + 1); // try to fix timestamp
         return false;
     }
-
+    */
 
 #ifdef MPU9150_CACHE_MODE
     if ((m_cacheCount == 0) && (count  >= MPU9150_FIFO_CHUNK_SIZE) && (count < (MPU9150_CACHE_SIZE * MPU9150_FIFO_CHUNK_SIZE))) {
@@ -545,7 +546,7 @@ bool RTIMUMPU9150::IMURead()
 
 #else
 
-    if (count > MPU9150_FIFO_CHUNK_SIZE * 40) {
+/*    if (count > MPU9150_FIFO_CHUNK_SIZE * 40) {
         // more than 40 samples behind - going too slowly so discard some samples but maintain timestamp correctly
         while (count >= MPU9150_FIFO_CHUNK_SIZE * 10) {
             if (!m_settings->HALRead(m_slaveAddr, MPU9150_FIFO_R_W, MPU9150_FIFO_CHUNK_SIZE, fifoData, "Failed to read fifo data"))
@@ -557,9 +558,11 @@ bool RTIMUMPU9150::IMURead()
 
     if (count < MPU9150_FIFO_CHUNK_SIZE)
         return false;
-
-    if (!m_settings->HALRead(m_slaveAddr, MPU9150_FIFO_R_W, MPU9150_FIFO_CHUNK_SIZE, fifoData, "Failed to read fifo data"))
+*/
+    if (!m_settings->HALRead(m_slaveAddr, MPU9150_ACCEL_XOUT_H, 6, fifoData, "Failed to read fifo data"))
         return false;
+
+    if (!m_settings->HALRead(m_slaveAddr, MPU9150_GYRO_XOUT_H, 6, fifoData2, "Failed to read fifo data"))
 
     if (!m_settings->HALRead(m_slaveAddr, MPU9150_EXT_SENS_DATA_00, m_compassDataLength, compassData, "Failed to read compass data"))
         return false;
@@ -567,7 +570,7 @@ bool RTIMUMPU9150::IMURead()
 #endif
 
     RTMath::convertToVector(fifoData, m_imuData.accel, m_accelScale, true);
-    RTMath::convertToVector(fifoData + 6, m_imuData.gyro, m_gyroScale, true);
+    RTMath::convertToVector(fifoData2, m_imuData.gyro, m_gyroScale, true);
 
     if (m_compassIs5883)
         RTMath::convertToVector(compassData, m_imuData.compass, 0.092f, true);
